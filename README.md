@@ -116,4 +116,75 @@
 
     NOTA: Es importante colocarle a cada atributo al menos un decorador con el tipo de atributo, ya que de lo contrario podria arrojarnos algun tipo de error o restriccion.
 
+
+# Creando entidades para reflejarlas en nuestra base de datos.
+    1. Podriamos empezar creando un nuevo modulo con el comando nest g res products
+    2. Esto va crear un esqueleto de un CRUD en el cual estara creada una carpeta entity y adentro un archivo product.entity.ts
+    3. Esto no es mas que una clase comun y corriente, pero para convertirla en una entidad y que nest junto con typeorm sepan que sera una tabla en BD hay que aplicarle un decorador, @Entity el cual se importa de typeorm
+    4. import { Entity } from "typeorm"; y deberia quedar algo como esto.
+
+        @Entity({ name: 'products'})
+        export class Product(){
+        }
     
+    5. De esta forma la aplicacion y el ORM saben que esta clase es una entidad y se creara de esta forma en la base de datos.
+    6. Se esta especificando el name y con ese name se creara la tabla en BD, pero si no se le especifica el name y se deja de esta formas @Entity(), entonces tomara por defecto el nombre de la clase y lo coloca en minuscula ( lowercase ) y en plural.
+    7. El siguiente paso seria agregarle las propiedades ( columnas de la tabla ) y para que el ORM entienda que son Columnas debemos agregarle un decorador @Column(), quedaria de esta manera
+
+        // El decorador PrimaryGeneratedColumn en typeOrm se utiliza para indicar que una columna es la clave primaria de la tabla. La columna debe ser de tipo entero y debe ser autoincrementable.
+        @PrimaryGeneratedColumn('uuid')
+        id: string;
+
+        @Column('text', {
+            unique: true,
+        })
+        title: string;
+
+        // Validar que tipo de datos admite tu BD, en este caso es float
+        // Intente con number pero me arrojaba error.
+        @Column('float', {
+            default: 0
+        })
+        price: number;
+
+        // Esta seria otra manera de definir nuestras columnas y su tipo
+        @Column({
+            type: 'text',
+            nullable: true
+        })
+        description: string;
+
+        @Column('text', {
+            unique: true
+        })
+        slug: string;
+
+        // Se colcoa Int para validar que no puede tener decimales
+        @Column('int', {
+            default: 0
+        })
+        stock: number;
+
+        @Column('text', {
+            array: true
+        })
+        sizes: string[];
+
+        @Column('text')
+        gender: string;
+
+        @Column('text', {
+            array: true,
+            default: []
+        })
+        tags: string[];
+    
+    8. Una vez creada la entidad, debemos hacer una configuracion en el modulo en el cual estamos creando la entidad, en este caso seria product.module.ts
+    9. y debemos importar lo siguiente TypeOrmModule.forFeature(), Aqui se registran las entidades que queremos que este modulo mapee hacia la BD, ya sea una entidad o mas pero que esten asociadad a este mismo modulo, nos quedaria algo asi.
+        
+        imports: [
+            TypeOrmModule.forFeature([Product])
+        ]
+    
+    10. Y de esta manera al levantar nuestra aplicacion, se va a crear en nuestra BD esta tabla con todas sus propiedades gracias a que tenemos una propiedad en el app.module -> TypeOrmModule.forRoot() -> synchronize: true
+    11. Gracias a esa propiedad se sincroniza de manera automatica nuestras entidades hacia la BD cada vez que se reinicia y actualiza alguna entidad.

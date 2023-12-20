@@ -188,3 +188,12 @@
     
     10. Y de esta manera al levantar nuestra aplicacion, se va a crear en nuestra BD esta tabla con todas sus propiedades gracias a que tenemos una propiedad en el app.module -> TypeOrmModule.forRoot() -> synchronize: true
     11. Gracias a esa propiedad se sincroniza de manera automatica nuestras entidades hacia la BD cada vez que se reinicia y actualiza alguna entidad.
+
+
+
+#   Informacion de utilidad para identificar errores en Dtos y Entidades
+    1. Normalmente si el error lo obtenemos en la respuesta de la API, es porque el error esta en el DTO, pero si el error lo obtenemos en el servidor, es porque el error esta en la entidad.
+    2. Para identificar el error en el DTO, debemos revisar el DTO en cuestion y ver si el error esta en el DTO o en la entidad.
+    3. Para identificar el error en la entidad, debemos revisar la entidad en cuestion y ver si el error esta en el DTO o en la entidad.
+
+    4. Un error que podriamos obtener en el Dto es que intentemos crear el producto y este no se cree, si revisamos el log del server y nio tenemos errores, entonces revisamos el DTO, a menos que hayamos configurado bien nuestro Dto y de esa forma nos arrojaria la respuesta del error del DTO en la respuesta que nos envia el servidor.

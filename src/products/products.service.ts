@@ -3,22 +3,33 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
+import { ProductImage } from './entities/product-image.entity';
 
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger('ProductsService')
   constructor(
     @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>
+    private readonly productRepository: Repository<Product>,
+
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>,
+
+    private readonly dataSource: DataSource
   ) { }
 
 
   async createProduct(createProductDto: CreateProductDto) {
 
     try {
-      const product = this.productRepository.create(createProductDto)
+      const { images = [], ...productDetails } = createProductDto
+
+      const product = this.productRepository.create({
+        ...productDetails,
+        images: images.map( image => this.productImageRepository.create({ url: image }))
+      })
 
       await this.productRepository.save(product)
 
@@ -32,7 +43,11 @@ export class ProductsService {
 
   async getAllProducts() {
     try {
-      const products = await this.productRepository.find()
+      const products = await this.productRepository.find({
+        relations: {
+          images: true
+        }
+      })
 
       return products;
     } catch (error) {
@@ -60,18 +75,41 @@ export class ProductsService {
   }
 
   async updateProduct(term: string, updateProductDto: UpdateProductDto) {
-    const product = await this.getOneProduct(term)
-    const { id } = product
+    const { images, ...toUpdate } = updateProductDto
 
-    const newProduct = await this.productRepository.preload({
-      id: id,
-      ...updateProductDto
+    const product = await this.productRepository.preload({
+      id: term, // Con la funcion preload lo que hacemos es quie va a buscar con la primera propiedad, es decir id en este caso.
+      ...toUpdate // Con esto vamos a decir que prepare el objeto que ya ha conseguido y lo construya tal cual como lo que nos viene en toUpdate
     })
-    
 
-    await this.productRepository.save(newProduct)
+    if(!product)
+      throw new NotFoundException(`Not found record with this term ${term}`)
 
-    return newProduct;
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      if(images){
+        await queryRunner.manager.delete(ProductImage, { product: { id: term } })
+
+        product.images = images.map( image => this.productImageRepository.create({ url: image }))
+
+      }
+
+      await queryRunner.manager.save(product)
+
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
+
+      return product;
+
+    } catch (error) {
+        await queryRunner.rollbackTransaction()
+        await queryRunner.release()
+        this.logger.error(error)
+    }
    
   }
 

@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { ProductImage } from "./product-image.entity";
 
 @Entity({ name: 'products'})
 export class Product {
@@ -45,4 +46,11 @@ export class Product {
         default: []
     })
     tags: string[]
+
+    @OneToMany(
+        () => ProductImage,
+        productImage => productImage.product,
+        { cascade: true }
+    )
+    images?: ProductImage[]
 }

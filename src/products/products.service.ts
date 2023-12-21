@@ -118,4 +118,15 @@ export class ProductsService {
     await this.productRepository.remove(product)
     return `Product with this term ${term} was removed`
   }
+
+  async deleteAllProducts() {
+    const query = this.productRepository.createQueryBuilder('product')
+
+    try {
+      return await query.delete().where({}).execute()
+    } catch (error) {
+      this.logger.error(error)
+    }
+
+  }
 }

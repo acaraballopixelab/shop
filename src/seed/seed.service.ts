@@ -21,7 +21,7 @@ export class SeedService {
     const insertPromise = []
 
     products.forEach(product => {
-      insertPromise.push(this.productService.createProduct(product))
+      this.productService.createProduct(product)
     })
 
   await Promise.all(insertPromise)

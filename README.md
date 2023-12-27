@@ -513,14 +513,8 @@
 
 #   Anteriormente se estaba utilizando el metodo Jwt para serializar el payload que es de tipo jwtPayload y alli teniamos el email, pero ahora queremos serializar el payload que tenga el id y no el email, por lo tanto debemos modificar el jwt-payload.interface.ts y esto nos pedira que modifiquemos los archivos donde lo utilizamos.
 
-    <!-- Antes estaba asi -->
     export interface jwtPayload {
-        email: string
-    }
-
-    <!-- Ahora lo usaremos asi. -->
-    export interface jwtPayload {
-        id: number
+        id: string
     }
 
 #   Custom Decorators obtener informacion del usuario que esta loguado en ese momento.

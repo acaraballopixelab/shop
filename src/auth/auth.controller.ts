@@ -4,6 +4,7 @@ import { CreateUserDto, LoginUserDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from './decorators/get-user.decorator';
 import { UserRoleGuard } from './guards/user-role/user-role.guard';
+import { User } from './entities/user.entity';
 
 
 @Controller('auth')
@@ -21,10 +22,11 @@ export class AuthController {
   }
 
   @Get('private')
-  @SetMetadata('roles', ['admin','super-admin'])
-  @UseGuards(AuthGuard(), UserRoleGuard)
+  // @SetMetadata('roles', ['admin','super-admin'])
+  // @UseGuards(AuthGuard(), UserRoleGuard)
+  @UseGuards(AuthGuard())
   private(
-    @GetUser() user: any
+    @GetUser() user: User
   ){
     return {
       ok: true,

@@ -6,6 +6,7 @@ import { Product } from './entities/product.entity';
 import { DataSource, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { ProductImage } from './entities/product-image.entity';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -21,14 +22,15 @@ export class ProductsService {
   ) { }
 
 
-  async createProduct(createProductDto: CreateProductDto) {
+  async createProduct(createProductDto: CreateProductDto, user: User) {
 
     try {
       const { images = [], ...productDetails } = createProductDto
 
       const product = this.productRepository.create({
         ...productDetails,
-        images: images.map( image => this.productImageRepository.create({ url: image }))
+        images: images.map(image => this.productImageRepository.create({ url: image })),
+        user
       })
 
       await this.productRepository.save(product)
@@ -59,30 +61,31 @@ export class ProductsService {
   async getOneProduct(term: string) {
     let product: Product;
 
-    if(isUUID(term)){
-      product = await this.productRepository.findOneBy({ id : term})
-    }else {
+    if (isUUID(term)) {
+      product = await this.productRepository.findOneBy({ id: term })
+    } else {
       product = await this.productRepository.findOneBy([
-        { title: term},
-        { slug: term}
+        { title: term },
+        { slug: term }
       ])
     }
-    
-    if(!product)
+
+    if (!product)
       throw new NotFoundException(`Not found record with this term ${term}`)
 
     return product;
   }
 
-  async updateProduct(term: string, updateProductDto: UpdateProductDto) {
+  async updateProduct(term: string, updateProductDto: UpdateProductDto, user: User) {
     const { images, ...toUpdate } = updateProductDto
 
     const product = await this.productRepository.preload({
       id: term, // Con la funcion preload lo que hacemos es quie va a buscar con la primera propiedad, es decir id en este caso.
-      ...toUpdate // Con esto vamos a decir que prepare el objeto que ya ha conseguido y lo construya tal cual como lo que nos viene en toUpdate
+      ...toUpdate, // Con esto vamos a decir que prepare el objeto que ya ha conseguido y lo construya tal cual como lo que nos viene en toUpdate
+      user
     })
 
-    if(!product)
+    if (!product)
       throw new NotFoundException(`Not found record with this term ${term}`)
 
     const queryRunner = this.dataSource.createQueryRunner()
@@ -90,10 +93,10 @@ export class ProductsService {
     await queryRunner.startTransaction();
 
     try {
-      if(images){
+      if (images) {
         await queryRunner.manager.delete(ProductImage, { product: { id: term } })
 
-        product.images = images.map( image => this.productImageRepository.create({ url: image }))
+        product.images = images.map(image => this.productImageRepository.create({ url: image }))
 
       }
 
@@ -106,11 +109,11 @@ export class ProductsService {
       return product;
 
     } catch (error) {
-        await queryRunner.rollbackTransaction()
-        await queryRunner.release()
-        this.logger.error(error)
+      await queryRunner.rollbackTransaction()
+      await queryRunner.release()
+      this.logger.error(error)
     }
-   
+
   }
 
   async deleteProduct(term: string) {
